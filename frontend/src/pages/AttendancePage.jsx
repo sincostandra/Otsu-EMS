@@ -1,8 +1,174 @@
+import { useCallback, useEffect, useState } from 'react'
+
+import api from '../api/client'
+import { useAuth } from '../auth/AuthContext'
+import ExportButtons from '../components/ExportButtons'
+import Pagination from '../components/Pagination'
+
+const PAGE_SIZE = 10
+
+function todayStr() {
+  const now = new Date()
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+  return local.toISOString().slice(0, 10)
+}
+
 export default function AttendancePage() {
+  const { user } = useAuth()
+  const isAdmin = user?.is_admin
+  const [rows, setRows] = useState([])
+  const [count, setCount] = useState(0)
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [dateFilter, setDateFilter] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [today, setToday] = useState(null) // employee's record for today
+  const [message, setMessage] = useState('')
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const { data } = await api.get('/attendance/', {
+        params: {
+          page,
+          search: search || undefined,
+          tanggal: dateFilter || undefined,
+        },
+      })
+      setRows(data.results)
+      setCount(data.count)
+    } finally {
+      setLoading(false)
+    }
+  }, [page, search, dateFilter])
+
+  const loadToday = useCallback(async () => {
+    if (isAdmin) return
+    const { data } = await api.get('/attendance/', {
+      params: { tanggal: todayStr() },
+    })
+    setToday(data.results[0] ?? null)
+  }, [isAdmin])
+
+  useEffect(() => {
+    const timer = setTimeout(load, search ? 300 : 0)
+    return () => clearTimeout(timer)
+  }, [load, search])
+
+  useEffect(() => {
+    loadToday()
+  }, [loadToday])
+
+  const doAction = async (action) => {
+    setMessage('')
+    try {
+      await api.post(`/attendance/${action}/`)
+      await Promise.all([load(), loadToday()])
+    } catch (err) {
+      setMessage(err.response?.data?.detail || 'Aksi gagal.')
+    }
+  }
+
   return (
-    <section className="card">
-      <h2>Absensi</h2>
-      <p className="muted">Check-in/out dan laporan absensi akan tampil di sini.</p>
+    <section className="stack">
+      <div className="toolbar">
+        <h2>Absensi</h2>
+        <ExportButtons
+          resource="attendance"
+          params={{ search: search || undefined, tanggal: dateFilter || undefined }}
+        />
+      </div>
+
+      {!isAdmin && (
+        <div className="card checkin-card">
+          <div>
+            <strong>Absensi hari ini</strong>
+            <p className="muted">
+              {today?.jam_masuk
+                ? `Masuk ${today.jam_masuk}${
+                    today.jam_keluar ? ` · Keluar ${today.jam_keluar}` : ''
+                  }`
+                : 'Belum check-in.'}
+            </p>
+          </div>
+          <div className="checkin-actions">
+            <button onClick={() => doAction('check-in')} disabled={Boolean(today?.jam_masuk)}>
+              Check In
+            </button>
+            <button
+              className="ghost"
+              onClick={() => doAction('check-out')}
+              disabled={!today?.jam_masuk || Boolean(today?.jam_keluar)}
+            >
+              Check Out
+            </button>
+          </div>
+        </div>
+      )}
+      {message && <p className="error">{message}</p>}
+
+      <div className="filters">
+        {isAdmin && (
+          <input
+            className="search"
+            placeholder="Cari nama atau email…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        )}
+        <label className="inline">
+          Tanggal
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => {
+              setPage(1)
+              setDateFilter(e.target.value)
+            }}
+          />
+        </label>
+      </div>
+
+      <div className="card table-wrap">
+        <table>
+          <thead>
+            <tr>
+              {isAdmin && <th>Nama</th>}
+              {isAdmin && <th>Email</th>}
+              <th>Tanggal</th>
+              <th>Jam Masuk</th>
+              <th>Jam Keluar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="muted center">
+                  Memuat…
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="muted center">
+                  Belum ada data absensi.
+                </td>
+              </tr>
+            ) : (
+              rows.map((r) => (
+                <tr key={r.id}>
+                  {isAdmin && <td>{r.nama}</td>}
+                  {isAdmin && <td>{r.email}</td>}
+                  <td>{r.tanggal}</td>
+                  <td>{r.jam_masuk || '—'}</td>
+                  <td>{r.jam_keluar || '—'}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <Pagination page={page} count={count} pageSize={PAGE_SIZE} onChange={setPage} />
     </section>
   )
 }
