@@ -1,6 +1,15 @@
+from datetime import datetime, timedelta
+
+from django.conf import settings
 from django.db import models
 
 from employees.models import Employee
+
+
+def late_cutoff():
+    """The latest on-time check-in (work start + grace)."""
+    start = datetime.combine(datetime.min, settings.WORK_START_TIME)
+    return (start + timedelta(minutes=settings.LATE_GRACE_MINUTES)).time()
 
 
 class Attendance(models.Model):
@@ -23,3 +32,13 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"{self.employee.nama} @ {self.tanggal}"
+
+    @property
+    def is_late(self):
+        return self.jam_masuk is not None and self.jam_masuk > late_cutoff()
+
+    @property
+    def status(self):
+        if self.jam_masuk is None:
+            return None
+        return "TELAT" if self.is_late else "HADIR"

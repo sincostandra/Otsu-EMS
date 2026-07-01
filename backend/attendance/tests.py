@@ -1,3 +1,5 @@
+from datetime import time
+
 import pytest
 
 pytestmark = pytest.mark.django_db
@@ -37,6 +39,28 @@ def test_second_check_out_rejected(employee_client):
 def test_admin_without_profile_cannot_check_in(admin_client):
     r = admin_client.post("/api/attendance/check-in/")
     assert r.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "jam,late",
+    [(time(9, 0), False), (time(9, 15), False), (time(9, 16), True)],
+)
+def test_lateness_status(make_employee, jam, late):
+    from attendance.models import Attendance
+
+    emp = make_employee("late@otsu.test")
+    a = Attendance.objects.create(employee=emp, tanggal="2026-03-02", jam_masuk=jam)
+    assert a.is_late is late
+    assert a.status == ("TELAT" if late else "HADIR")
+
+
+def test_status_none_without_check_in(make_employee):
+    from attendance.models import Attendance
+
+    emp = make_employee("noin@otsu.test")
+    a = Attendance.objects.create(employee=emp, tanggal="2026-03-03")
+    assert a.status is None
+    assert a.is_late is False
 
 
 def test_report_scoped_to_own_records(employee_client, employee_user, make_employee):

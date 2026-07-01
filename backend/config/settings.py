@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
-from datetime import timedelta
+from datetime import time, timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -201,6 +201,11 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
+
+# --- Attendance rules -----------------------------------------------------
+# Work starts at 09:00 with a 15-minute grace; a check-in after 09:15 is late.
+WORK_START_TIME = time(9, 0)
+LATE_GRACE_MINUTES = 15
 
 # --- CORS (dev only; prod is same-origin so this stays empty) -------------
 CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS')
