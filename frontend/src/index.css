@@ -350,6 +350,10 @@ label.inline input {
   color: var(--accent);
 }
 
+.stat-value.late {
+  color: #b45309;
+}
+
 .chart-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

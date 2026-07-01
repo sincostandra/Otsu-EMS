@@ -24,6 +24,7 @@ export default function AttendancePage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [today, setToday] = useState(null) // employee's record for today
+  const [stats, setStats] = useState(null) // employee's monthly summary
   const [message, setMessage] = useState('')
 
   const load = useCallback(async () => {
@@ -46,10 +47,12 @@ export default function AttendancePage() {
 
   const loadToday = useCallback(async () => {
     if (isAdmin) return
-    const { data } = await api.get('/attendance/', {
-      params: { tanggal: todayStr() },
-    })
-    setToday(data.results[0] ?? null)
+    const [todayRes, statsRes] = await Promise.all([
+      api.get('/attendance/', { params: { tanggal: todayStr() } }),
+      api.get('/reports/my-stats/'),
+    ])
+    setToday(todayRes.data.results[0] ?? null)
+    setStats(statsRes.data)
   }, [isAdmin])
 
   useEffect(() => {
@@ -112,6 +115,15 @@ export default function AttendancePage() {
         </div>
       )}
       {message && <p className="error">{message}</p>}
+
+      {!isAdmin && stats && (
+        <div className="stat-grid">
+          <StatCard label="Hadir Bulan Ini" value={stats.hadir} />
+          <StatCard label="Telat" value={stats.telat} tone="late" />
+          <StatCard label="Tidak Hadir" value={stats.tidak_hadir} />
+          <StatCard label="Kehadiran" value={`${stats.attendance_rate}%`} />
+        </div>
+      )}
 
       <div className="filters">
         {isAdmin && (
@@ -196,6 +208,17 @@ export default function AttendancePage() {
 
       <Pagination page={page} count={count} pageSize={PAGE_SIZE} onChange={setPage} />
     </section>
+  )
+}
+
+function StatCard({ label, value, tone }) {
+  return (
+    <div className="card stat-card">
+      <span className={tone === 'late' ? 'stat-value late' : 'stat-value'}>
+        {value}
+      </span>
+      <span className="muted">{label}</span>
+    </div>
   )
 }
 
