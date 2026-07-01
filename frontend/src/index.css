@@ -290,3 +290,38 @@ label.checkbox input {
   font-size: 18px;
   text-align: center;
 }
+
+.toolbar-actions,
+.export-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.checkin-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.checkin-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+label.inline {
+  flex-direction: column;
+  gap: 4px;
+}
+
+label.inline input {
+  width: auto;
+}

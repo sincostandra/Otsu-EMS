@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import api from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import EmployeeForm from '../components/EmployeeForm'
+import ExportButtons from '../components/ExportButtons'
 import Modal from '../components/Modal'
 import Pagination from '../components/Pagination'
 
@@ -60,9 +61,12 @@ export default function EmployeesPage() {
     <section className="stack">
       <div className="toolbar">
         <h2>Karyawan</h2>
-        {isAdmin && (
-          <button onClick={() => setEditing('new')}>+ Tambah Karyawan</button>
-        )}
+        <div className="toolbar-actions">
+          <ExportButtons resource="employees" params={{ search: search || undefined }} />
+          {isAdmin && (
+            <button onClick={() => setEditing('new')}>+ Tambah Karyawan</button>
+          )}
+        </div>
       </div>
 
       <input
