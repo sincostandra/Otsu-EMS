@@ -63,6 +63,17 @@ def test_status_none_without_check_in(make_employee):
     assert a.is_late is False
 
 
+def test_status_filter_returns_only_late(admin_client, make_employee):
+    from attendance.models import Attendance
+
+    emp = make_employee("filt@otsu.test", nama="Filt")
+    Attendance.objects.create(employee=emp, tanggal="2026-03-04", jam_masuk=time(8, 55))
+    Attendance.objects.create(employee=emp, tanggal="2026-03-05", jam_masuk=time(9, 30))
+    r = admin_client.get("/api/attendance/?status=telat")
+    assert r.data["count"] == 1
+    assert r.data["results"][0]["is_late"] is True
+
+
 def test_report_scoped_to_own_records(employee_client, employee_user, make_employee):
     from attendance.models import Attendance
 

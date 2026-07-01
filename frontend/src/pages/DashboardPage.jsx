@@ -30,6 +30,11 @@ const CHART_OPTIONS = {
   scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
 }
 
+const RECAP_OPTIONS = {
+  ...CHART_OPTIONS,
+  plugins: { legend: { display: true, position: 'bottom' } },
+}
+
 export default function DashboardPage() {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -66,8 +71,18 @@ export default function DashboardPage() {
         tension: 0.3,
         fill: true,
       },
+      {
+        label: 'Telat',
+        data: summary.attendance_recap.map((r) => r.telat),
+        borderColor: '#d97706',
+        backgroundColor: 'rgba(217, 119, 6, 0.2)',
+        tension: 0.3,
+        fill: true,
+      },
     ],
   }
+
+  const late = summary.late_today ?? []
 
   return (
     <section className="stack">
@@ -77,6 +92,7 @@ export default function DashboardPage() {
         <StatCard label="Total Karyawan" value={summary.total_employees} />
         <StatCard label="Karyawan Aktif" value={summary.active_employees} />
         <StatCard label="Hadir Hari Ini" value={summary.present_today} />
+        <StatCard label="Telat Hari Ini" value={late.length} />
       </div>
 
       <div className="chart-grid">
@@ -89,9 +105,37 @@ export default function DashboardPage() {
         <div className="card">
           <h3>Kehadiran 7 Hari Terakhir</h3>
           <div className="chart-box">
-            <Line data={recapData} options={CHART_OPTIONS} />
+            <Line data={recapData} options={RECAP_OPTIONS} />
           </div>
         </div>
+      </div>
+
+      <div className="card">
+        <h3>Telat Hari Ini</h3>
+        {late.length === 0 ? (
+          <p className="muted">Tidak ada keterlambatan hari ini.</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Nama</th>
+                <th>Jabatan</th>
+                <th>Jam Masuk</th>
+              </tr>
+            </thead>
+            <tbody>
+              {late.map((r, i) => (
+                <tr key={i}>
+                  <td>{r.nama}</td>
+                  <td>{r.jabatan}</td>
+                  <td>
+                    <span className="badge late">{r.jam_masuk}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </section>
   )

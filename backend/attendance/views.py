@@ -7,7 +7,7 @@ from rest_framework.response import Response
 
 from reports.exporters import export_response
 
-from .models import Attendance
+from .models import Attendance, late_cutoff
 from .serializers import AttendanceSerializer
 
 
@@ -22,9 +22,15 @@ class AttendanceViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         qs = Attendance.objects.select_related("employee", "employee__user")
         user = self.request.user
-        if user.is_admin:
-            return qs
-        return qs.filter(employee__user=user)
+        if not user.is_admin:
+            qs = qs.filter(employee__user=user)
+        # derived-status filter (status is not a DB column)
+        status_param = self.request.query_params.get("status")
+        if status_param == "telat":
+            qs = qs.filter(jam_masuk__gt=late_cutoff())
+        elif status_param == "hadir":
+            qs = qs.filter(jam_masuk__isnull=False, jam_masuk__lte=late_cutoff())
+        return qs
 
     @action(detail=False, methods=["get"])
     def export(self, request):

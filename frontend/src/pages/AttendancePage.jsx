@@ -21,6 +21,7 @@ export default function AttendancePage() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [dateFilter, setDateFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [today, setToday] = useState(null) // employee's record for today
   const [message, setMessage] = useState('')
@@ -33,6 +34,7 @@ export default function AttendancePage() {
           page,
           search: search || undefined,
           tanggal: dateFilter || undefined,
+          status: statusFilter || undefined,
         },
       })
       setRows(data.results)
@@ -40,7 +42,7 @@ export default function AttendancePage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, dateFilter])
+  }, [page, search, dateFilter, statusFilter])
 
   const loadToday = useCallback(async () => {
     if (isAdmin) return
@@ -75,7 +77,11 @@ export default function AttendancePage() {
         <h2>Absensi</h2>
         <ExportButtons
           resource="attendance"
-          params={{ search: search || undefined, tanggal: dateFilter || undefined }}
+          params={{
+            search: search || undefined,
+            tanggal: dateFilter || undefined,
+            status: statusFilter || undefined,
+          }}
         />
       </div>
 
@@ -127,6 +133,22 @@ export default function AttendancePage() {
             }}
           />
         </label>
+        {isAdmin && (
+          <label className="inline">
+            Status
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setPage(1)
+                setStatusFilter(e.target.value)
+              }}
+            >
+              <option value="">Semua</option>
+              <option value="hadir">Tepat waktu</option>
+              <option value="telat">Telat</option>
+            </select>
+          </label>
+        )}
       </div>
 
       <div className="card table-wrap">
@@ -138,18 +160,19 @@ export default function AttendancePage() {
               <th>Tanggal</th>
               <th>Jam Masuk</th>
               <th>Jam Keluar</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="muted center">
+                <td colSpan={6} className="muted center">
                   Memuat…
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="muted center">
+                <td colSpan={6} className="muted center">
                   Belum ada data absensi.
                 </td>
               </tr>
@@ -161,6 +184,9 @@ export default function AttendancePage() {
                   <td>{r.tanggal}</td>
                   <td>{r.jam_masuk || '—'}</td>
                   <td>{r.jam_keluar || '—'}</td>
+                  <td>
+                    <StatusBadge status={r.status} />
+                  </td>
                 </tr>
               ))
             )}
@@ -170,5 +196,15 @@ export default function AttendancePage() {
 
       <Pagination page={page} count={count} pageSize={PAGE_SIZE} onChange={setPage} />
     </section>
+  )
+}
+
+function StatusBadge({ status }) {
+  if (!status) return <span className="muted">—</span>
+  const isLate = status === 'TELAT'
+  return (
+    <span className={isLate ? 'badge telat' : 'badge ok'}>
+      {isLate ? 'Telat' : 'Tepat'}
+    </span>
   )
 }
