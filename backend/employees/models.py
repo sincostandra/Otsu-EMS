@@ -3,12 +3,7 @@ from django.db import models
 
 
 class Employee(models.Model):
-    """Domain record for a karyawan, linked 1:1 to a login account.
-
-    Auth data (email, password, role) lives on ``accounts.User``; this model
-    holds the HR fields the admin manages. Deleting the user cascades here.
-    """
-
+    # HR fields; auth (email/password/role) lives on the linked accounts.User
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
