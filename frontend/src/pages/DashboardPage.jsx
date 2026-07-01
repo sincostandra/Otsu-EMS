@@ -55,7 +55,8 @@ export default function DashboardPage() {
       {
         label: 'Karyawan',
         data: summary.per_jabatan.map((r) => r.total),
-        backgroundColor: '#0057b8',
+        backgroundColor: '#1552b3',
+        borderRadius: 4,
       },
     ],
   }
@@ -66,16 +67,16 @@ export default function DashboardPage() {
       {
         label: 'Hadir',
         data: summary.attendance_recap.map((r) => r.hadir),
-        borderColor: '#1e874b',
-        backgroundColor: 'rgba(30, 135, 75, 0.2)',
+        borderColor: '#15803d',
+        backgroundColor: 'rgba(21, 128, 61, 0.18)',
         tension: 0.3,
         fill: true,
       },
       {
         label: 'Telat',
         data: summary.attendance_recap.map((r) => r.telat),
-        borderColor: '#d97706',
-        backgroundColor: 'rgba(217, 119, 6, 0.2)',
+        borderColor: '#b45309',
+        backgroundColor: 'rgba(180, 83, 9, 0.18)',
         tension: 0.3,
         fill: true,
       },
