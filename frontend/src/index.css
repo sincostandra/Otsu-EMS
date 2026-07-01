@@ -325,3 +325,38 @@ label.inline {
 label.inline input {
   width: auto;
 }
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.chart-box {
+  height: 280px;
+}
+
+@media (max-width: 720px) {
+  .stat-grid,
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
