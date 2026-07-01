@@ -9,7 +9,7 @@ const EMPTY = {
   password: '',
 }
 
-export default function EmployeeForm({ initial, onSubmit }) {
+export default function EmployeeForm({ initial, onSubmit, onDone }) {
   const isEdit = Boolean(initial)
   const [values, setValues] = useState(
     initial ? { ...EMPTY, ...initial, password: '' } : EMPTY,
@@ -33,6 +33,8 @@ export default function EmployeeForm({ initial, onSubmit }) {
       const data = await onSubmit(payload)
       if (data?.temp_password) {
         setTempPassword(data.temp_password)
+      } else {
+        onDone?.()
       }
     } catch (err) {
       const detail = err.response?.data
@@ -54,6 +56,9 @@ export default function EmployeeForm({ initial, onSubmit }) {
         <p className="muted">
           Salin dan berikan ke karyawan — password ini hanya tampil sekali.
         </p>
+        <button type="button" onClick={() => onDone?.()}>
+          Selesai
+        </button>
       </div>
     )
   }

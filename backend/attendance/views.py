@@ -5,6 +5,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from accounts.permissions import IsAdmin
 from reports.exporters import export_response
 
 from .models import Attendance, late_cutoff
@@ -18,6 +19,11 @@ class AttendanceViewSet(viewsets.ReadOnlyModelViewSet):
     ordering_fields = ["tanggal", "jam_masuk", "employee__nama"]
     ordering = ["-tanggal"]
     filterset_fields = ["tanggal", "employee"]
+
+    def get_permissions(self):
+        if self.action == "export":
+            return [IsAdmin()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         qs = Attendance.objects.select_related("employee", "employee__user")
@@ -63,7 +69,7 @@ class AttendanceViewSet(viewsets.ReadOnlyModelViewSet):
         record, created = Attendance.objects.get_or_create(
             employee=employee,
             tanggal=timezone.localdate(),
-            defaults={"jam_masuk": timezone.localtime().time()},
+            defaults={"jam_masuk": timezone.localtime().time().replace(microsecond=0)},
         )
         if not created:
             raise ValidationError("Sudah check-in hari ini.")
@@ -82,6 +88,6 @@ class AttendanceViewSet(viewsets.ReadOnlyModelViewSet):
             raise ValidationError("Belum check-in hari ini.")
         if record.jam_keluar is not None:
             raise ValidationError("Sudah check-out hari ini.")
-        record.jam_keluar = timezone.localtime().time()
+        record.jam_keluar = timezone.localtime().time().replace(microsecond=0)
         record.save(update_fields=["jam_keluar", "updated_at"])
         return Response(self.get_serializer(record).data)

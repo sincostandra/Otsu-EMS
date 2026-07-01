@@ -11,6 +11,12 @@ def test_check_in_creates_record(employee_client):
     assert r.data["jam_masuk"] is not None
 
 
+def test_check_in_time_has_no_microseconds(employee_client):
+    r = employee_client.post("/api/attendance/check-in/")
+    # jam_masuk serialized as HH:MM:SS, never with a fractional part
+    assert "." not in r.data["jam_masuk"]
+
+
 def test_second_check_in_same_day_rejected(employee_client):
     employee_client.post("/api/attendance/check-in/")
     r = employee_client.post("/api/attendance/check-in/")
@@ -72,6 +78,16 @@ def test_status_filter_returns_only_late(admin_client, make_employee):
     r = admin_client.get("/api/attendance/?status=telat")
     assert r.data["count"] == 1
     assert r.data["results"][0]["is_late"] is True
+
+
+def test_export_forbidden_for_employee(employee_client):
+    r = employee_client.get("/api/attendance/export/?format=csv")
+    assert r.status_code == 403
+
+
+def test_export_allowed_for_admin(admin_client):
+    r = admin_client.get("/api/attendance/export/?format=csv")
+    assert r.status_code == 200
 
 
 def test_report_scoped_to_own_records(employee_client, employee_user, make_employee):

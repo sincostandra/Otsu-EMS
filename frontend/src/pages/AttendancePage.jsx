@@ -23,6 +23,7 @@ export default function AttendancePage() {
   const [dateFilter, setDateFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState(null) // employee's own profile
   const [today, setToday] = useState(null) // employee's record for today
   const [stats, setStats] = useState(null) // employee's monthly summary
   const [message, setMessage] = useState('')
@@ -47,12 +48,14 @@ export default function AttendancePage() {
 
   const loadToday = useCallback(async () => {
     if (isAdmin) return
-    const [todayRes, statsRes] = await Promise.all([
+    const [todayRes, statsRes, profileRes] = await Promise.all([
       api.get('/attendance/', { params: { tanggal: todayStr() } }),
       api.get('/reports/my-stats/'),
+      api.get('/employees/'),
     ])
     setToday(todayRes.data.results[0] ?? null)
     setStats(statsRes.data)
+    setProfile(profileRes.data.results[0] ?? null)
   }, [isAdmin])
 
   useEffect(() => {
@@ -78,15 +81,19 @@ export default function AttendancePage() {
     <section className="stack">
       <div className="toolbar">
         <h2>Absensi</h2>
-        <ExportButtons
-          resource="attendance"
-          params={{
-            search: search || undefined,
-            tanggal: dateFilter || undefined,
-            status: statusFilter || undefined,
-          }}
-        />
+        {isAdmin && (
+          <ExportButtons
+            resource="attendance"
+            params={{
+              search: search || undefined,
+              tanggal: dateFilter || undefined,
+              status: statusFilter || undefined,
+            }}
+          />
+        )}
       </div>
+
+      {!isAdmin && profile && <ProfileView employee={profile} />}
 
       {!isAdmin && (
         <div className="card checkin-card">
@@ -211,6 +218,47 @@ export default function AttendancePage() {
   )
 }
 
+function initialsOf(name) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0].toUpperCase())
+    .join('')
+}
+
+function ProfileView({ employee }) {
+  return (
+    <div className="card profile-card">
+      <div className="profile-avatar" aria-hidden="true">
+        {initialsOf(employee.nama)}
+      </div>
+      <div className="profile-body">
+        <h3>{employee.nama}</h3>
+        <p className="muted">{employee.jabatan}</p>
+        <dl className="profile-fields">
+          <div>
+            <dt>Email</dt>
+            <dd>{employee.email}</dd>
+          </div>
+          <div>
+            <dt>Tanggal Masuk</dt>
+            <dd>{employee.tanggal_masuk}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>
+              <span className={employee.status_aktif ? 'status on' : 'status off'}>
+                {employee.status_aktif ? 'Aktif' : 'Nonaktif'}
+              </span>
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  )
+}
+
 function StatCard({ label, value, tone }) {
   return (
     <div className="card stat-card">
@@ -226,7 +274,7 @@ function StatusBadge({ status }) {
   if (!status) return <span className="muted">—</span>
   const isLate = status === 'TELAT'
   return (
-    <span className={isLate ? 'badge telat' : 'badge ok'}>
+    <span className={isLate ? 'status late' : 'status on'}>
       {isLate ? 'Telat' : 'Tepat'}
     </span>
   )

@@ -25,7 +25,14 @@ export default function App() {
         }
       >
         <Route index element={<HomeRedirect />} />
-        <Route path="employees" element={<EmployeesPage />} />
+        <Route
+          path="employees"
+          element={
+            <ProtectedRoute adminOnly>
+              <EmployeesPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="attendance" element={<AttendancePage />} />
         <Route
           path="dashboard"
