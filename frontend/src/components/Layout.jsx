@@ -1,0 +1,35 @@
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+
+import { useAuth } from '../auth/AuthContext'
+
+export default function Layout() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login', { replace: true })
+  }
+
+  return (
+    <div className="app-shell">
+      <header className="topbar">
+        <span className="brand">Otsuka EMS</span>
+        <nav>
+          {user?.is_admin && <NavLink to="/dashboard">Dashboard</NavLink>}
+          <NavLink to="/employees">Karyawan</NavLink>
+          <NavLink to="/attendance">Absensi</NavLink>
+        </nav>
+        <div className="topbar-right">
+          <span className="muted">{user?.email}</span>
+          <button className="ghost" onClick={handleLogout}>
+            Keluar
+          </button>
+        </div>
+      </header>
+      <main className="content">
+        <Outlet />
+      </main>
+    </div>
+  )
+}
