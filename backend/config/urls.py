@@ -1,4 +1,4 @@
-"""URL configuration for the Otsuka EMS project."""
+"""URL configuration for the Otsu EMS project."""
 from django.contrib import admin
 from django.urls import include, path
 
