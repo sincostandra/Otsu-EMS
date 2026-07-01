@@ -10,13 +10,7 @@ User = get_user_model()
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
-    """Serialize an Employee, provisioning/updating its login account.
-
-    ``email`` and ``password`` live on the User; everything else on Employee.
-    On create, if no password is given we generate a temp one and surface it
-    once (as ``temp_password``) so the admin can hand it to the new hire.
-    """
-
+    # email/password map to the linked User; the rest are Employee fields
     email = serializers.EmailField()
     password = serializers.CharField(
         write_only=True, required=False, allow_blank=True, min_length=8

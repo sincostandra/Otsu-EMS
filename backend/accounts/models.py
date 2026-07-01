@@ -3,8 +3,6 @@ from django.db import models
 
 
 class UserManager(BaseUserManager):
-    """Manager for the email-as-username custom user."""
-
     use_in_migrations = True
 
     def _create_user(self, email, password, **extra_fields):
@@ -34,12 +32,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
-    """Custom user: login by email, with an app-level role.
-
-    We drop the default ``username`` field and authenticate by ``email`` so the
-    React SPA can log employees in with the same email admins manage them under.
-    """
-
+    # login by email instead of username; role drives admin vs employee access
     class Role(models.TextChoices):
         ADMIN = "ADMIN", "Admin"
         EMPLOYEE = "EMPLOYEE", "Employee"
@@ -58,5 +51,4 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        """True for staff/superusers or anyone with the ADMIN role."""
         return self.is_superuser or self.role == self.Role.ADMIN

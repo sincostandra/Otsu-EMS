@@ -6,8 +6,6 @@ from .models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Read-only view of a user (used by /api/auth/me/)."""
-
     is_admin = serializers.BooleanField(read_only=True)
     employee_id = serializers.SerializerMethodField()
     nama = serializers.SerializerMethodField()
@@ -26,12 +24,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """Login serializer that also returns the user's identity/role.
-
-    Saves the SPA an extra round-trip: the login response already carries who
-    the user is and whether they are an admin, so the UI can route immediately.
-    """
-
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -40,5 +32,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         data = super().validate(attrs)
+        # include user identity so the SPA can route without a second request
         data["user"] = UserSerializer(self.user).data
         return data
