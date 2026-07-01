@@ -1,3 +1,1 @@
-from django.db import models
-
-# Create your models here.
+# The reports app has no models; it only exposes export + summary endpoints.
