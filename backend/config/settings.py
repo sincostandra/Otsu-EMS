@@ -193,6 +193,8 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ),
+    # free up ?format= for the export endpoints (we don't use suffix negotiation)
+    'URL_FORMAT_OVERRIDE': None,
 }
 
 SIMPLE_JWT = {

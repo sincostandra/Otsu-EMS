@@ -5,6 +5,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from reports.exporters import export_response
+
 from .models import Attendance
 from .serializers import AttendanceSerializer
 
@@ -23,6 +25,24 @@ class AttendanceViewSet(viewsets.ReadOnlyModelViewSet):
         if user.is_admin:
             return qs
         return qs.filter(employee__user=user)
+
+    @action(detail=False, methods=["get"])
+    def export(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        headers = ["Nama", "Email", "Tanggal", "Jam Masuk", "Jam Keluar"]
+        rows = [
+            [
+                a.employee.nama,
+                a.employee.user.email,
+                a.tanggal.isoformat(),
+                a.jam_masuk.isoformat() if a.jam_masuk else "",
+                a.jam_keluar.isoformat() if a.jam_keluar else "",
+            ]
+            for a in queryset
+        ]
+        return export_response(
+            request.query_params.get("format"), "attendance", headers, rows
+        )
 
     def _current_employee(self):
         employee = getattr(self.request.user, "employee", None)
