@@ -41,3 +41,42 @@ def test_summary_returns_aggregates(admin_client, employee_user):
     assert r.status_code == 200
     assert r.data["total_employees"] == 1
     assert len(r.data["attendance_recap"]) == 7
+    assert r.data["attendance_recap"][0].keys() >= {"tanggal", "hadir", "telat"}
+
+
+def test_summary_includes_late_today(admin_client, employee_user):
+    from datetime import time
+
+    from django.utils import timezone
+
+    from attendance.models import Attendance
+
+    _, emp = employee_user
+    Attendance.objects.create(
+        employee=emp, tanggal=timezone.localdate(), jam_masuk=time(10, 0)
+    )
+    r = admin_client.get("/api/reports/summary/")
+    assert len(r.data["late_today"]) == 1
+    assert r.data["late_today"][0]["nama"] == "Budi"
+
+
+def test_my_stats_for_employee(employee_client, employee_user):
+    from datetime import time
+
+    from django.utils import timezone
+
+    from attendance.models import Attendance
+
+    _, emp = employee_user
+    Attendance.objects.create(
+        employee=emp, tanggal=timezone.localdate(), jam_masuk=time(9, 30)
+    )
+    r = employee_client.get("/api/reports/my-stats/")
+    assert r.status_code == 200
+    assert r.data["hadir"] == 1
+    assert r.data["telat"] == 1
+    assert "attendance_rate" in r.data
+
+
+def test_my_stats_requires_employee_profile(admin_client):
+    assert admin_client.get("/api/reports/my-stats/").status_code == 400
