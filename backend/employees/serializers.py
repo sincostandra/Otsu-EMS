@@ -42,13 +42,17 @@ class EmployeeSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         email = validated_data.pop("email")
-        password = validated_data.pop("password", "") or secrets.token_urlsafe(9)
+        password = validated_data.pop("password", "")
+        generated = not password
+        if generated:
+            password = secrets.token_urlsafe(9)
         user = User.objects.create_user(
             email=email, password=password, role=User.Role.EMPLOYEE
         )
         employee = Employee.objects.create(user=user, **validated_data)
-        # Stashed so to_representation can reveal it once (create only).
-        employee._temp_password = password
+        # only reveal the password when we generated it (never echo admin input)
+        if generated:
+            employee._temp_password = password
         return employee
 
     @transaction.atomic
