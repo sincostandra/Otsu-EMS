@@ -1,6 +1,7 @@
 """Fixed question -> plan mappings. Presets (and keyword matches) skip the LLM
 entirely, so the common/demo questions cost zero tokens."""
 import copy
+import re
 
 PRESETS = [
     {
@@ -56,17 +57,36 @@ PRESETS = [
 _BY_ID = {p["id"]: p for p in PRESETS}
 
 
+def _norm(text):
+    return " ".join((text or "").lower().split())
+
+
 def get_preset(preset_id):
     p = _BY_ID.get(preset_id)
     return copy.deepcopy(p["plan"]) if p else None
 
 
-def match_question(question):
-    q = (question or "").lower()
+def match_exact(question):
+    """Zero-cost match only when the question is one of the canonical presets
+    typed verbatim — safe (no false positives) even with the LLM enabled."""
+    q = _norm(question)
     for p in PRESETS:
-        if any(k in q for k in p["keywords"]):
+        if _norm(p["question"]) == q:
             return copy.deepcopy(p["plan"])
     return None
+
+
+def match_question(question):
+    """Fallback for when the LLM is unavailable. Word-boundary matching (so
+    "terlambat" doesn't fire inside "keterlambatan") and the best-scoring
+    preset wins instead of the first one listed."""
+    q = _norm(question)
+    best, best_score = None, 0
+    for p in PRESETS:
+        score = sum(1 for k in p["keywords"] if re.search(rf"\b{re.escape(k)}\b", q))
+        if score > best_score:
+            best, best_score = p, score
+    return copy.deepcopy(best["plan"]) if best else None
 
 
 def public_list():

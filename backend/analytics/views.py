@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from django.core.cache import cache
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
@@ -31,30 +32,45 @@ class AnalyticsQueryView(APIView):
         question = (q.validated_data.get("question") or "").strip()
         preset_id = (q.validated_data.get("preset") or "").strip()
 
-        # 1. Preset id / keyword match -> fixed plan, zero LLM cost.
+        # 1. Preset chip -> exact fixed plan, zero LLM cost.
         if preset_id:
             plan = presets.get_preset(preset_id)
             if plan:
                 return Response(run_plan(plan, "preset"))
-        if question:
-            plan = presets.match_question(question)
-            if plan:
-                return Response(run_plan(plan, "preset"))
 
-            # 2. Cache hit -> return the previous answer, zero LLM cost.
-            key = _cache_key(question)
-            cached = cache.get(key)
-            if cached:
-                cached = {**cached, "meta": {**cached["meta"], "cached": True}}
-                return Response(cached)
+        if not question:
+            return Response(_fallback())
 
-            # 3. LLM planner (only when configured).
-            if llm.is_enabled():
-                raw = llm.plan(question)
-                if raw and not raw.get("unsupported"):
+        # 2. Canonical preset typed verbatim -> zero cost (safe, no false hits).
+        plan = presets.match_exact(question)
+        if plan:
+            return Response(run_plan(plan, "preset"))
+
+        # 3. Cache hit -> return the previous answer, zero LLM cost.
+        key = _cache_key(question)
+        cached = cache.get(key)
+        if cached:
+            return Response({**cached, "meta": {**cached["meta"], "cached": True}})
+
+        # 4. LLM planner is the primary path for free-text: it understands
+        #    intent ("tren", "1 bulan") that loose keywords get wrong.
+        if llm.is_enabled():
+            raw = llm.plan(question)
+            if raw is not None:
+                if raw.get("unsupported"):
+                    return Response(_fallback())
+                try:
                     result = run_plan(raw, "llm")
+                except ValidationError:
+                    result = None  # malformed plan -> fall through to keywords
+                if result is not None:
                     cache.set(key, result, CACHE_TTL)
                     return Response(result)
+
+        # 5. Keyword fallback (LLM disabled or unavailable).
+        plan = presets.match_question(question)
+        if plan:
+            return Response(run_plan(plan, "preset"))
 
         return Response(_fallback())
 

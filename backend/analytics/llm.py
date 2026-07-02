@@ -34,16 +34,39 @@ Ubah pertanyaan admin (bahasa Indonesia) menjadi rencana JSON memakai HANYA metr
 
 {catalog}
 
-Aturan params: period_days (1-400) atau period_months (dikonversi), limit (1-50),
+Aturan params: period_days (1-400) ATAU period_months (dikonversi), limit (1-50),
 granularity salah satu dari day/week/month. Jangan mengarang metric atau kolom.
-Jika pertanyaan tidak bisa dijawab oleh metric di atas, set "unsupported": true.
-Gunakan insight_kind "llm" hanya untuk pertanyaan terbuka ("insight menarik", "ringkasan");
-selain itu "template".
+
+Petunjuk memilih:
+- "tren"/"perkembangan"/"dari waktu ke waktu" -> lateness_trend atau
+  attendance_composition_trend (pakai granularity).
+- "siapa"/"paling sering telat"/"ranking" -> top_late_employees.
+- "divisi/jabatan mana ... lembur" -> overtime_by_jabatan;
+  "... telat" -> lateness_by_jabatan; "... kehadiran" -> attendance_rate_by_jabatan.
+- Tangkap periode dari kalimat: "1 bulan"->period_months 1, "6 bulan"->period_months 6,
+  "minggu ini"->period_days 7. Default 30 hari bila tak disebut.
+- Pertanyaan terbuka ("insight menarik", "ringkasan") -> insight_kind "llm" DAN
+  tetap sertakan blocks (mis. attendance_overview + lateness_by_jabatan). Jangan
+  pernah mengembalikan blocks kosong; selalu isi minimal satu block.
+- Selain pertanyaan terbuka, gunakan insight_kind "template".
+- Jika benar-benar di luar cakupan metric di atas, set "unsupported": true.
+
+Contoh:
+- "siapa paling sering telat 2 bulan terakhir" ->
+  {{"metric":"top_late_employees","params":{{"period_months":2,"limit":10}},"viz":"bar_horizontal"}}
+- "tren keterlambatan 1 bulan terakhir" ->
+  {{"metric":"lateness_trend","params":{{"period_months":1,"granularity":"week"}},"viz":"line"}}
+- "divisi mana paling sering lembur" ->
+  {{"metric":"overtime_by_jabatan","params":{{"period_days":30}},"viz":"bar"}}
+- "apakah ada insight menarik bulan ini" -> insight_kind "llm", blocks:
+  [{{"metric":"attendance_overview","params":{{"period_days":30}},"viz":"kpi"}},
+   {{"metric":"lateness_by_jabatan","params":{{"period_days":30}},"viz":"bar"}}]
 
 Balas HANYA JSON dengan bentuk:
 {{"title": str, "insight_kind": "template"|"llm", "unsupported": bool, "reason": str,
   "blocks": [{{"metric": str, "params": {{}}, "viz": str}}]}}
-Maksimal 3 blocks."""
+"title" WAJIB bahasa Indonesia, ringkas, dan menyertakan periode (mis.
+"Tren keterlambatan (30 hari terakhir)"). Maksimal 3 blocks."""
 
 
 def _chat(messages, *, max_tokens=500, temperature=0.0):
@@ -60,6 +83,9 @@ def _chat(messages, *, max_tokens=500, temperature=0.0):
         headers={
             "Authorization": f"Bearer {settings.GROQ_API_KEY}",
             "Content-Type": "application/json",
+            # Groq sits behind Cloudflare, which blocks the default
+            # "Python-urllib" agent (403 / error 1010). Send a real UA.
+            "User-Agent": "otsu-ems-analytics/1.0",
         },
         method="POST",
     )
@@ -76,7 +102,7 @@ def plan(question):
         content = _chat([
             {"role": "system", "content": _PLANNER_SYSTEM.format(catalog=_catalog())},
             {"role": "user", "content": question[:300]},
-        ])
+        ], max_tokens=1024)
         data = json.loads(content)
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError,
             KeyError, ValueError) as exc:

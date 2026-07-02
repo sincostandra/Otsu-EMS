@@ -118,7 +118,10 @@ def test_query_preset_returns_blocks(admin_client, make_employee):
     assert r.data["blocks"]
 
 
-def test_query_keyword_match(admin_client):
+def test_query_keyword_match(admin_client, monkeypatch):
+    from analytics import llm
+
+    monkeypatch.setattr(llm, "is_enabled", lambda: False)
     r = admin_client.post(
         "/api/analytics/query/",
         {"question": "Siapa yang paling sering telat?"}, format="json",
@@ -127,7 +130,75 @@ def test_query_keyword_match(admin_client):
     assert r.data["meta"]["source"] == "preset"
 
 
-def test_query_fallback_suggests_presets(admin_client):
+def test_trend_keyword_not_hijacked_by_late(admin_client, monkeypatch):
+    # "keterlambatan" must NOT trigger the top-late preset (word-boundary);
+    # "tren" should route to the trend metric. Disable the LLM so this
+    # exercises the keyword fallback deterministically (no network).
+    from analytics import llm
+
+    monkeypatch.setattr(llm, "is_enabled", lambda: False)
+    r = admin_client.post(
+        "/api/analytics/query/",
+        {"question": "Bagaimana tren keterlambatan 1 bulan terakhir?"},
+        format="json",
+    )
+    assert r.status_code == 200
+    assert r.data["meta"]["source"] == "preset"
+    assert "line" in [b["type"] for b in r.data["blocks"]]
+
+
+def test_llm_primary_over_keyword_for_freetext(admin_client, monkeypatch):
+    from analytics import llm
+
+    monkeypatch.setattr(llm, "is_enabled", lambda: True)
+    monkeypatch.setattr(llm, "plan", lambda q: {
+        "title": "Rencana LLM", "insight_kind": "template",
+        "blocks": [{"metric": "lateness_trend",
+                    "params": {"period_months": 1}, "viz": "line"}],
+    })
+    r = admin_client.post(
+        "/api/analytics/query/",
+        {"question": "tren keterlambatan sebulan terakhir dong"}, format="json",
+    )
+    assert r.data["meta"]["source"] == "llm"
+
+
+def test_exact_preset_skips_llm(admin_client, monkeypatch):
+    from analytics import llm
+
+    def boom(_q):
+        raise AssertionError("LLM must not run for a verbatim preset question")
+
+    monkeypatch.setattr(llm, "is_enabled", lambda: True)
+    monkeypatch.setattr(llm, "plan", boom)
+    r = admin_client.post(
+        "/api/analytics/query/",
+        {"question": "Divisi mana yang paling sering lembur?"}, format="json",
+    )
+    assert r.status_code == 200
+    assert r.data["meta"]["source"] == "preset"
+
+
+def test_malformed_llm_plan_falls_through_to_keyword(admin_client, monkeypatch):
+    from analytics import llm
+
+    monkeypatch.setattr(llm, "is_enabled", lambda: True)
+    # unknown metric -> plan validation fails -> keyword fallback catches "lembur"
+    monkeypatch.setattr(llm, "plan", lambda q: {
+        "blocks": [{"metric": "drop_table", "params": {}, "viz": "bar"}],
+    })
+    r = admin_client.post(
+        "/api/analytics/query/",
+        {"question": "info lembur divisi apa saja"}, format="json",
+    )
+    assert r.status_code == 200
+    assert r.data["meta"]["source"] == "preset"
+
+
+def test_query_fallback_suggests_presets(admin_client, monkeypatch):
+    from analytics import llm
+
+    monkeypatch.setattr(llm, "is_enabled", lambda: False)
     r = admin_client.post(
         "/api/analytics/query/", {"question": "cuaca besok?"}, format="json"
     )
