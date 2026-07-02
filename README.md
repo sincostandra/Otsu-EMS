@@ -1,19 +1,19 @@
 # Otsu EMS
 
-Employee Management System — a Django + DRF API with a React (Vite) single-page
+Employee Management System: a Django + DRF API with a React (Vite) single-page
 frontend. Admins manage employees and monitor attendance; employees check in/out
 and track their own monthly stats. Lateness is derived from check-in time
 (work starts 09:00, 15-minute grace), so a check-in after 09:15 counts as **Telat**.
 
 ## Features
 
-- **Auth** — JWT (email as username), role-based access (admin vs. employee).
-- **Employees** — full CRUD, pagination, search, filter by jabatan/status (admin only).
-- **Attendance** — self check-in/out, derived on-time/late status, admin overview with filters.
-- **Reports** — admin dashboard (today's late list, per-jabatan mix, 7-day recap chart);
+- **Auth**: JWT (email as username), role-based access (admin vs. employee).
+- **Employees**: full CRUD, pagination, search, filter by jabatan/status (admin only).
+- **Attendance**: self check-in/out, derived on-time/late status, admin overview with filters.
+- **Reports**: admin dashboard (today's late list, per-jabatan mix, 7-day recap chart);
   employee self-stats (monthly hadir / telat / tidak hadir / attendance rate).
-- **Export** — employees and attendance to CSV / Excel (admin only).
-- **kAI — AI Analytics** — admins ask attendance questions in natural language
+- **Export**: employees and attendance to CSV / Excel (admin only).
+- **kAI (AI Analytics)**: admins ask attendance questions in natural language
   (Indonesian) and get interactive charts, KPI cards, a lateness heatmap, and a
   short written insight. The LLM only *plans*; the backend computes the numbers.
 
@@ -55,7 +55,7 @@ data is never sent to the model in the planning step.
 
 **Cost controls** (it runs on a free budget):
 
-- **Preset chips** map straight to fixed plans — 0 LLM calls for the common questions.
+- **Preset chips** map straight to fixed plans: 0 LLM calls for the common questions.
 - A **verbatim-preset** match and a per-question **cache** (5-min TTL) also short-circuit the model.
 - Free-text questions use **one** planner call; a second small **narrator** call happens
   only for open-ended "insight" questions and receives compact aggregates, never raw records.
@@ -116,7 +116,7 @@ with the `SEED_*` env vars).
 | Employee | eko@otsu.test     | `employee12345` |
 
 The seed creates ~300 employees with ~6 months of varied attendance; only the accounts
-above have usable passwords — everyone else gets a random one. Re-run with `--reset`
+above have usable passwords; everyone else gets a random one. Re-run with `--reset`
 to rebuild from scratch.
 
 ## Environment variables
@@ -180,21 +180,21 @@ CI (`.github/workflows/ci.yml`) runs the same checks on every PR to `main`.
 
 The repo ships a `railway.json` so Railway builds straight from the `Dockerfile`.
 
-1. **Create the project** — in Railway: **New Project → Deploy from GitHub repo →
+1. **Create the project** in Railway: **New Project → Deploy from GitHub repo →
    select this repo**. Railway detects the `Dockerfile` and builds it.
-2. **Add Postgres** — in the project canvas: **New → Database → Add PostgreSQL**.
-3. **Connect the database** — on the web service, add a `DATABASE_URL` variable
+2. **Add Postgres** in the project canvas: **New → Database → Add PostgreSQL**.
+3. **Connect the database**: on the web service, add a `DATABASE_URL` variable
    pointing at the Postgres service (its `DATABASE_URL` connection string). This is
    what selects managed Postgres; without it the app falls back to local SQLite.
 4. **Set the service variables** (Variables tab on the web service):
-   - `DJANGO_SECRET_KEY` — a long random string
+   - `DJANGO_SECRET_KEY`: a long random string
    - `DJANGO_DEBUG=0`
    - `RUN_SEED=1` for the first deploy, then set it to `0` so later deploys skip re-seeding
-   - `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_EMPLOYEE_PASSWORD` — demo logins
-   - `GROQ_API_KEY` — enables kAI's LLM planner (optional; kAI degrades to presets without it)
+   - `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_EMPLOYEE_PASSWORD`: demo logins
+   - `GROQ_API_KEY`: enables kAI's LLM planner (optional; kAI degrades to presets without it)
    `PORT` and `RAILWAY_PUBLIC_DOMAIN` (used for `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS`)
    are provided by Railway; no need to set them.
-5. **Expose the service** — under **Settings → Networking → Generate Domain** to get
+5. **Expose the service**: under **Settings → Networking → Generate Domain** to get
    a public `*.up.railway.app` URL.
 
 The entrypoint migrates (and optionally seeds) before Gunicorn binds to `$PORT`.
