@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from accounts.permissions import IsAdmin
 from reports.exporters import export_response
 
-from .models import Employee
+from .models import JABATAN, Employee
 from .serializers import EmployeeSerializer
 
 
@@ -31,14 +31,8 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="jabatan-options")
     def jabatan_options(self, request):
-        # distinct jabatan values for the filter dropdown (respects scoping)
-        values = (
-            self.get_queryset()
-            .order_by("jabatan")
-            .values_list("jabatan", flat=True)
-            .distinct()
-        )
-        return Response(list(values))
+        # canonical jabatan list for the filter/form dropdowns
+        return Response(sorted(JABATAN))
 
     @action(detail=False, methods=["get"])
     def export(self, request):

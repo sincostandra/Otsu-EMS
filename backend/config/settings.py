@@ -14,6 +14,7 @@ import os
 from datetime import time, timedelta
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -35,14 +36,16 @@ def env_list(name, default=""):
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    "django-insecure-90w*pflrho57klr+p19oi5v8%e1s!!04k^)vj1hwg*q_2jjmdf",
-)
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env_bool("DJANGO_DEBUG", True)
+
+# SECURITY WARNING: keep the secret key secret. The dev fallback only applies
+# with DEBUG on; production (DEBUG=0) must supply DJANGO_SECRET_KEY.
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured("DJANGO_SECRET_KEY is required when DEBUG=0")
+    SECRET_KEY = "django-insecure-dev-only-do-not-use-in-production"
 
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
@@ -79,6 +82,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'corsheaders',
+    'drf_spectacular',
     # Local
     'accounts',
     'employees',
@@ -137,6 +141,8 @@ if DATABASE_URL:
             'PORT': str(_db.port or ''),
         }
     }
+elif not DEBUG:
+    raise ImproperlyConfigured("DATABASE_URL is required when DEBUG=0")
 else:
     DATABASES = {
         'default': {
@@ -211,8 +217,16 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_THROTTLE_RATES': {'login': '5/min'},
     # free up ?format= for the export endpoints (we don't use suffix negotiation)
     'URL_FORMAT_OVERRIDE': None,
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Otsu EMS API',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 SIMPLE_JWT = {

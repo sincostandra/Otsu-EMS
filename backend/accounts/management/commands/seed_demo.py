@@ -9,7 +9,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from attendance.models import Attendance
-from employees.models import Employee
+from employees.models import JABATAN, Employee
 
 User = get_user_model()
 
@@ -33,14 +33,6 @@ LAST_NAMES = [
     "Maulana", "Susanto", "Rahmawati", "Hidayat", "Utami", "Setiawan",
     "Permana", "Firmansyah", "Purnama", "Simanjuntak", "Hakim", "Yulianti",
 ]
-JABATAN = [
-    "Staff Produksi", "Operator Mesin", "Supervisor Produksi",
-    "QA Analyst", "QA Inspector", "HR Officer", "Recruiter",
-    "Marketing Executive", "Digital Marketing", "IT Support",
-    "Software Engineer", "System Analyst", "Finance Staff", "Accountant",
-    "Logistics Staff", "Warehouse Admin",
-]
-
 # Check-in distribution (minutes from midnight). Cutoff for "on time" is 09:15.
 MEAN_IN = {"ontime": 525, "normal": 538, "chronic": 562}  # 08:45 / 08:58 / 09:22
 STDDEV_IN = 14

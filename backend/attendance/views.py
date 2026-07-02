@@ -1,3 +1,4 @@
+import django_filters
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -12,13 +13,22 @@ from .models import Attendance, late_cutoff
 from .serializers import AttendanceSerializer
 
 
+class AttendanceFilter(django_filters.FilterSet):
+    tanggal_after = django_filters.DateFilter(field_name="tanggal", lookup_expr="gte")
+    tanggal_before = django_filters.DateFilter(field_name="tanggal", lookup_expr="lte")
+
+    class Meta:
+        model = Attendance
+        fields = ["tanggal", "employee"]
+
+
 class AttendanceViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = AttendanceSerializer
     permission_classes = [IsAuthenticated]
     search_fields = ["employee__nama", "employee__user__email"]
     ordering_fields = ["tanggal", "jam_masuk", "employee__nama"]
     ordering = ["-tanggal"]
-    filterset_fields = ["tanggal", "employee"]
+    filterset_class = AttendanceFilter
 
     def get_permissions(self):
         if self.action == "export":

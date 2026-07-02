@@ -20,7 +20,8 @@ export default function AttendancePage() {
   const [count, setCount] = useState(0)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
-  const [dateFilter, setDateFilter] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState(null) // employee's own profile
@@ -35,7 +36,8 @@ export default function AttendancePage() {
         params: {
           page,
           search: search || undefined,
-          tanggal: dateFilter || undefined,
+          tanggal_after: dateFrom || undefined,
+          tanggal_before: dateTo || undefined,
           status: statusFilter || undefined,
         },
       })
@@ -44,7 +46,7 @@ export default function AttendancePage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, dateFilter, statusFilter])
+  }, [page, search, dateFrom, dateTo, statusFilter])
 
   const loadToday = useCallback(async () => {
     if (isAdmin) return
@@ -86,7 +88,8 @@ export default function AttendancePage() {
             resource="attendance"
             params={{
               search: search || undefined,
-              tanggal: dateFilter || undefined,
+              tanggal_after: dateFrom || undefined,
+              tanggal_before: dateTo || undefined,
               status: statusFilter || undefined,
             }}
           />
@@ -142,13 +145,24 @@ export default function AttendancePage() {
           />
         )}
         <label className="inline">
-          Tanggal
+          Dari
           <input
             type="date"
-            value={dateFilter}
+            value={dateFrom}
             onChange={(e) => {
               setPage(1)
-              setDateFilter(e.target.value)
+              setDateFrom(e.target.value)
+            }}
+          />
+        </label>
+        <label className="inline">
+          Sampai
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => {
+              setPage(1)
+              setDateTo(e.target.value)
             }}
           />
         </label>

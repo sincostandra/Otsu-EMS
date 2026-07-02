@@ -9,7 +9,7 @@ const EMPTY = {
   password: '',
 }
 
-export default function EmployeeForm({ initial, onSubmit, onDone }) {
+export default function EmployeeForm({ initial, onSubmit, onDone, jabatanOptions = [] }) {
   const isEdit = Boolean(initial)
   const [values, setValues] = useState(
     initial ? { ...EMPTY, ...initial, password: '' } : EMPTY,
@@ -80,7 +80,19 @@ export default function EmployeeForm({ initial, onSubmit, onDone }) {
       </label>
       <label>
         Jabatan
-        <input value={values.jabatan} onChange={update('jabatan')} required />
+        <select value={values.jabatan} onChange={update('jabatan')} required>
+          <option value="" disabled>
+            Pilih jabatan…
+          </option>
+          {jabatanOptions.map((j) => (
+            <option key={j} value={j}>
+              {j}
+            </option>
+          ))}
+          {values.jabatan && !jabatanOptions.includes(values.jabatan) && (
+            <option value={values.jabatan}>{values.jabatan}</option>
+          )}
+        </select>
       </label>
       <label>
         Tanggal Masuk
