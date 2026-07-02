@@ -128,9 +128,11 @@ class Command(BaseCommand):
 
     def _build_attendance(self, employees, days_back):
         today = timezone.localdate()
+        # Seed history up to *yesterday* only, so today is left empty for whoever
+        # is testing to check in/out themselves.
         workdays = [
             today - timedelta(days=o)
-            for o in range(days_back)
+            for o in range(1, days_back + 1)
             if (today - timedelta(days=o)).weekday() < 5  # Mon–Fri
         ]
         rows = []
@@ -141,11 +143,7 @@ class Command(BaseCommand):
                 if random.random() > present_prob:
                     continue  # absent → no row (counts as Alpha in reports)
                 jam_masuk = _mins_to_time(random.gauss(mean_in, STDDEV_IN))
-                # today: some are still at work (no check-out yet)
-                if day == today and random.random() < 0.4:
-                    jam_keluar = None
-                else:
-                    jam_keluar = _mins_to_time(random.gauss(1035, 12))  # ~17:15
+                jam_keluar = _mins_to_time(random.gauss(1035, 12))  # ~17:15
                 rows.append(
                     Attendance(
                         employee=emp,
