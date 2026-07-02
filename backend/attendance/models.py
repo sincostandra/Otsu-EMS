@@ -12,6 +12,12 @@ def late_cutoff():
     return (start + timedelta(minutes=settings.LATE_GRACE_MINUTES)).time()
 
 
+def overtime_cutoff():
+    """The earliest check-out that counts as overtime (work end + grace)."""
+    end = datetime.combine(datetime.min, settings.WORK_END_TIME)
+    return (end + timedelta(minutes=settings.OVERTIME_GRACE_MINUTES)).time()
+
+
 class Attendance(models.Model):
     employee = models.ForeignKey(
         Employee, on_delete=models.CASCADE, related_name="attendances"
@@ -42,3 +48,7 @@ class Attendance(models.Model):
         if self.jam_masuk is None:
             return None
         return "TELAT" if self.is_late else "HADIR"
+
+    @property
+    def is_overtime(self):
+        return self.jam_keluar is not None and self.jam_keluar > overtime_cutoff()

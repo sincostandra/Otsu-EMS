@@ -10,11 +10,10 @@ import { useEffect, useState } from 'react'
 import { Bar } from 'react-chartjs-2'
 
 import api from '../api/client'
-import Pagination from '../components/Pagination'
+import KaiPanel from '../components/analytics/KaiPanel'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend)
 
-const LATE_PAGE_SIZE = 5
 const DOW = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
 
 function dayOfWeek(dateStr) {
@@ -48,7 +47,6 @@ const JABATAN_OPTIONS = {
 export default function DashboardPage() {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [latePage, setLatePage] = useState(1)
 
   useEffect(() => {
     api
@@ -126,8 +124,6 @@ export default function DashboardPage() {
   }
 
   const late = summary.late_today ?? []
-  const lateStart = (latePage - 1) * LATE_PAGE_SIZE
-  const latePageRows = late.slice(lateStart, lateStart + LATE_PAGE_SIZE)
 
   return (
     <section className="stack">
@@ -154,41 +150,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="card">
-        <h3>Telat Hari Ini</h3>
-        {late.length === 0 ? (
-          <p className="muted">Tidak ada keterlambatan hari ini.</p>
-        ) : (
-          <>
-            <table>
-              <thead>
-                <tr>
-                  <th>Nama</th>
-                  <th>Jabatan</th>
-                  <th>Jam Masuk</th>
-                </tr>
-              </thead>
-              <tbody>
-                {latePageRows.map((r, i) => (
-                  <tr key={lateStart + i}>
-                    <td>{r.nama}</td>
-                    <td>{r.jabatan}</td>
-                    <td>
-                      <span className="badge late">{r.jam_masuk}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <Pagination
-              page={latePage}
-              count={late.length}
-              pageSize={LATE_PAGE_SIZE}
-              onChange={setLatePage}
-            />
-          </>
-        )}
-      </div>
+      <KaiPanel />
     </section>
   )
 }

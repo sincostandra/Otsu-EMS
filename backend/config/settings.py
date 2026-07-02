@@ -88,6 +88,7 @@ INSTALLED_APPS = [
     'employees',
     'attendance',
     'reports',
+    'analytics',
 ]
 
 MIDDLEWARE = [
@@ -218,7 +219,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'DEFAULT_THROTTLE_RATES': {'login': '5/min'},
+    'DEFAULT_THROTTLE_RATES': {'login': '5/min', 'analytics': '20/hour'},
     # free up ?format= for the export endpoints (we don't use suffix negotiation)
     'URL_FORMAT_OVERRIDE': None,
 }
@@ -238,6 +239,18 @@ SIMPLE_JWT = {
 # Work starts at 09:00 with a 15-minute grace; a check-in after 09:15 is late.
 WORK_START_TIME = time(9, 0)
 LATE_GRACE_MINUTES = 15
+# Work ends at 17:00; a check-out past 17:00 + grace counts as overtime (lembur).
+WORK_END_TIME = time(17, 0)
+OVERTIME_GRACE_MINUTES = 30
+
+# --- AI Analytics (Groq, OpenAI-compatible endpoint) ----------------------
+# Leave GROQ_API_KEY empty to disable the LLM planner; presets still work.
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b").strip()
+GROQ_BASE_URL = os.environ.get(
+    "GROQ_BASE_URL", "https://api.groq.com/openai/v1/chat/completions"
+).strip()
+GROQ_TIMEOUT = int(os.environ.get("GROQ_TIMEOUT", "20"))
 
 # --- CORS (dev only; prod is same-origin so this stays empty) -------------
 CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS')

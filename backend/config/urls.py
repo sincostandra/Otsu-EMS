@@ -13,6 +13,7 @@ urlpatterns = [
     path("api/", include("employees.urls")),
     path("api/", include("attendance.urls")),
     path("api/", include("reports.urls")),
+    path("api/", include("analytics.urls")),
     # SPA fallback: everything that isn't the API, the admin, or a static file
     # is handled by react-router. WhiteNoise serves /static/ before this runs.
     re_path(r"^(?!api/|admin/|static/).*$", spa_index),
