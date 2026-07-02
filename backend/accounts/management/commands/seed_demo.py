@@ -104,7 +104,7 @@ class Command(BaseCommand):
 
     def _provision(self, specs):
         employees = []
-        for nama, email, jabatan, pattern, password in specs:
+        for idx, (nama, email, jabatan, pattern, password) in enumerate(specs):
             user, created = User.objects.get_or_create(
                 email=email, defaults={"role": User.Role.EMPLOYEE}
             )
@@ -123,27 +123,35 @@ class Command(BaseCommand):
             # remember the attendance profile for this run
             employee._pattern = pattern
             employee._absent_prone = random.random() < 0.05
+            # the documented demo logins are left unchecked-in today
+            employee._is_demo = idx < len(DEMO_EMPLOYEES)
             employees.append(employee)
         return employees
 
     def _build_attendance(self, employees, days_back):
         today = timezone.localdate()
-        # Seed history up to *yesterday* only, so today is left empty for whoever
-        # is testing to check in/out themselves.
-        workdays = [
-            today - timedelta(days=o)
-            for o in range(1, days_back + 1)
-            if (today - timedelta(days=o)).weekday() < 5  # Mon–Fri
-        ]
         rows = []
         for emp in employees:
+            # Demo-credential accounts get no row for today so a reviewer can
+            # check in/out themselves; everyone else is marked today too, which
+            # keeps the dashboard populated (incl. today's late arrivals).
+            offsets = range(1, days_back + 1) if emp._is_demo else range(days_back)
+            workdays = [
+                today - timedelta(days=o)
+                for o in offsets
+                if (today - timedelta(days=o)).weekday() < 5  # Mon–Fri
+            ]
             present_prob = 0.75 if emp._absent_prone else 0.93
             mean_in = MEAN_IN[emp._pattern]
             for day in workdays:
                 if random.random() > present_prob:
                     continue  # absent → no row (counts as Alpha in reports)
                 jam_masuk = _mins_to_time(random.gauss(mean_in, STDDEV_IN))
-                jam_keluar = _mins_to_time(random.gauss(1035, 12))  # ~17:15
+                # today: some are still at work (no check-out yet)
+                if day == today and random.random() < 0.4:
+                    jam_keluar = None
+                else:
+                    jam_keluar = _mins_to_time(random.gauss(1035, 12))  # ~17:15
                 rows.append(
                     Attendance(
                         employee=emp,
