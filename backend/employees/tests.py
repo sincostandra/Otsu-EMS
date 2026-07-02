@@ -9,7 +9,7 @@ def test_admin_create_generates_temp_password(admin_client):
         {
             "nama": "Siti",
             "email": "siti@otsu.test",
-            "jabatan": "HR",
+            "jabatan": "HR Officer",
             "tanggal_masuk": "2026-02-01",
         },
         format="json",
@@ -24,7 +24,7 @@ def test_admin_create_with_explicit_password_has_no_temp(admin_client):
         {
             "nama": "Siti",
             "email": "siti@otsu.test",
-            "jabatan": "HR",
+            "jabatan": "HR Officer",
             "tanggal_masuk": "2026-02-01",
             "password": "secret12345",
         },

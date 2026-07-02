@@ -1,10 +1,17 @@
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from rest_framework.test import APIClient
 
 from employees.models import Employee
 
 User = get_user_model()
+
+
+@pytest.fixture(autouse=True)
+def _clear_throttle_cache():
+    # login throttle state lives in the cache; isolate it per test
+    cache.clear()
 
 
 def _auth(client, email, password):

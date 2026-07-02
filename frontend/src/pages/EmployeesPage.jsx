@@ -208,6 +208,7 @@ export default function EmployeesPage() {
             initial={editing === 'new' ? null : editing}
             onSubmit={handleSubmit}
             onDone={() => setEditing(null)}
+            jabatanOptions={jabatanOptions}
           />
         </Modal>
       )}
