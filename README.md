@@ -141,15 +141,17 @@ The repo ships a `railway.json` so Railway builds straight from the `Dockerfile`
 1. **Create the project** — in Railway: **New Project → Deploy from GitHub repo →
    select this repo**. Railway detects the `Dockerfile` and builds it.
 2. **Add Postgres** — in the project canvas: **New → Database → Add PostgreSQL**.
-   Reference it from the web service so `DATABASE_URL` is injected automatically.
-3. **Set the service variables** (Variables tab on the web service):
+3. **Connect the database** — on the web service, add a `DATABASE_URL` variable
+   pointing at the Postgres service (its `DATABASE_URL` connection string). This is
+   what selects managed Postgres; without it the app falls back to local SQLite.
+4. **Set the service variables** (Variables tab on the web service):
    - `DJANGO_SECRET_KEY` — a long random string
    - `DJANGO_DEBUG=0`
    - `RUN_SEED=1` for the first deploy, then set it to `0` so later deploys skip re-seeding
    - `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_EMPLOYEE_PASSWORD` — demo logins
-   `DATABASE_URL`, `PORT`, and `RAILWAY_PUBLIC_DOMAIN` (used for `ALLOWED_HOSTS` /
-   `CSRF_TRUSTED_ORIGINS`) are provided by Railway; no need to set them.
-4. **Expose the service** — under **Settings → Networking → Generate Domain** to get
+   `PORT` and `RAILWAY_PUBLIC_DOMAIN` (used for `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS`)
+   are provided by Railway; no need to set them.
+5. **Expose the service** — under **Settings → Networking → Generate Domain** to get
    a public `*.up.railway.app` URL.
 
 The entrypoint migrates (and optionally seeds) before Gunicorn binds to `$PORT`.
