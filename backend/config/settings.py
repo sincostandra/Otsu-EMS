@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
-from datetime import timedelta
+from datetime import time, timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -46,6 +46,13 @@ DEBUG = env_bool("DJANGO_DEBUG", True)
 
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
+
+# Render injects the public hostname at runtime; trust it automatically so we
+# don't have to hard-code the *.onrender.com domain in the blueprint.
+RENDER_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "").strip()
+if RENDER_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_HOSTNAME)
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_HOSTNAME}")
 
 
 # Application definition
@@ -201,6 +208,11 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
+
+# --- Attendance rules -----------------------------------------------------
+# Work starts at 09:00 with a 15-minute grace; a check-in after 09:15 is late.
+WORK_START_TIME = time(9, 0)
+LATE_GRACE_MINUTES = 15
 
 # --- CORS (dev only; prod is same-origin so this stays empty) -------------
 CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS')

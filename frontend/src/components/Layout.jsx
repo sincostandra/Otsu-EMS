@@ -14,10 +14,10 @@ export default function Layout() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <span className="brand">Otsuka EMS</span>
+        <span className="brand">Otsu EMS</span>
         <nav>
           {user?.is_admin && <NavLink to="/dashboard">Dashboard</NavLink>}
-          <NavLink to="/employees">Karyawan</NavLink>
+          {user?.is_admin && <NavLink to="/employees">Karyawan</NavLink>}
           <NavLink to="/attendance">Absensi</NavLink>
         </nav>
         <div className="topbar-right">

@@ -21,8 +21,11 @@ export default function AttendancePage() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [dateFilter, setDateFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
   const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState(null) // employee's own profile
   const [today, setToday] = useState(null) // employee's record for today
+  const [stats, setStats] = useState(null) // employee's monthly summary
   const [message, setMessage] = useState('')
 
   const load = useCallback(async () => {
@@ -33,6 +36,7 @@ export default function AttendancePage() {
           page,
           search: search || undefined,
           tanggal: dateFilter || undefined,
+          status: statusFilter || undefined,
         },
       })
       setRows(data.results)
@@ -40,14 +44,18 @@ export default function AttendancePage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, dateFilter])
+  }, [page, search, dateFilter, statusFilter])
 
   const loadToday = useCallback(async () => {
     if (isAdmin) return
-    const { data } = await api.get('/attendance/', {
-      params: { tanggal: todayStr() },
-    })
-    setToday(data.results[0] ?? null)
+    const [todayRes, statsRes, profileRes] = await Promise.all([
+      api.get('/attendance/', { params: { tanggal: todayStr() } }),
+      api.get('/reports/my-stats/'),
+      api.get('/employees/'),
+    ])
+    setToday(todayRes.data.results[0] ?? null)
+    setStats(statsRes.data)
+    setProfile(profileRes.data.results[0] ?? null)
   }, [isAdmin])
 
   useEffect(() => {
@@ -73,11 +81,19 @@ export default function AttendancePage() {
     <section className="stack">
       <div className="toolbar">
         <h2>Absensi</h2>
-        <ExportButtons
-          resource="attendance"
-          params={{ search: search || undefined, tanggal: dateFilter || undefined }}
-        />
+        {isAdmin && (
+          <ExportButtons
+            resource="attendance"
+            params={{
+              search: search || undefined,
+              tanggal: dateFilter || undefined,
+              status: statusFilter || undefined,
+            }}
+          />
+        )}
       </div>
+
+      {!isAdmin && profile && <ProfileView employee={profile} />}
 
       {!isAdmin && (
         <div className="card checkin-card">
@@ -107,6 +123,15 @@ export default function AttendancePage() {
       )}
       {message && <p className="error">{message}</p>}
 
+      {!isAdmin && stats && (
+        <div className="stat-grid">
+          <StatCard label="Hadir Bulan Ini" value={stats.hadir} />
+          <StatCard label="Telat" value={stats.telat} tone="late" />
+          <StatCard label="Tidak Hadir" value={stats.tidak_hadir} />
+          <StatCard label="Kehadiran" value={`${stats.attendance_rate}%`} />
+        </div>
+      )}
+
       <div className="filters">
         {isAdmin && (
           <input
@@ -127,6 +152,22 @@ export default function AttendancePage() {
             }}
           />
         </label>
+        {isAdmin && (
+          <label className="inline">
+            Status
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setPage(1)
+                setStatusFilter(e.target.value)
+              }}
+            >
+              <option value="">Semua</option>
+              <option value="hadir">Tepat waktu</option>
+              <option value="telat">Telat</option>
+            </select>
+          </label>
+        )}
       </div>
 
       <div className="card table-wrap">
@@ -138,18 +179,19 @@ export default function AttendancePage() {
               <th>Tanggal</th>
               <th>Jam Masuk</th>
               <th>Jam Keluar</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="muted center">
+                <td colSpan={6} className="muted center">
                   Memuat…
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="muted center">
+                <td colSpan={6} className="muted center">
                   Belum ada data absensi.
                 </td>
               </tr>
@@ -161,6 +203,9 @@ export default function AttendancePage() {
                   <td>{r.tanggal}</td>
                   <td>{r.jam_masuk || '—'}</td>
                   <td>{r.jam_keluar || '—'}</td>
+                  <td>
+                    <StatusBadge status={r.status} />
+                  </td>
                 </tr>
               ))
             )}
@@ -170,5 +215,67 @@ export default function AttendancePage() {
 
       <Pagination page={page} count={count} pageSize={PAGE_SIZE} onChange={setPage} />
     </section>
+  )
+}
+
+function initialsOf(name) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0].toUpperCase())
+    .join('')
+}
+
+function ProfileView({ employee }) {
+  return (
+    <div className="card profile-card">
+      <div className="profile-avatar" aria-hidden="true">
+        {initialsOf(employee.nama)}
+      </div>
+      <div className="profile-body">
+        <h3>{employee.nama}</h3>
+        <p className="muted">{employee.jabatan}</p>
+        <dl className="profile-fields">
+          <div>
+            <dt>Email</dt>
+            <dd>{employee.email}</dd>
+          </div>
+          <div>
+            <dt>Tanggal Masuk</dt>
+            <dd>{employee.tanggal_masuk}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>
+              <span className={employee.status_aktif ? 'status on' : 'status off'}>
+                {employee.status_aktif ? 'Aktif' : 'Nonaktif'}
+              </span>
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  )
+}
+
+function StatCard({ label, value, tone }) {
+  return (
+    <div className="card stat-card">
+      <span className={tone === 'late' ? 'stat-value late' : 'stat-value'}>
+        {value}
+      </span>
+      <span className="muted">{label}</span>
+    </div>
+  )
+}
+
+function StatusBadge({ status }) {
+  if (!status) return <span className="muted">—</span>
+  const isLate = status === 'TELAT'
+  return (
+    <span className={isLate ? 'status late' : 'status on'}>
+      {isLate ? 'Telat' : 'Tepat'}
+    </span>
   )
 }

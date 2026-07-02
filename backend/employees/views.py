@@ -1,6 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from accounts.permissions import IsAdmin
 from reports.exporters import export_response
@@ -27,6 +28,17 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         if self.action in {"create", "update", "partial_update", "destroy"}:
             return [IsAdmin()]
         return [IsAuthenticated()]
+
+    @action(detail=False, methods=["get"], url_path="jabatan-options")
+    def jabatan_options(self, request):
+        # distinct jabatan values for the filter dropdown (respects scoping)
+        values = (
+            self.get_queryset()
+            .order_by("jabatan")
+            .values_list("jabatan", flat=True)
+            .distinct()
+        )
+        return Response(list(values))
 
     @action(detail=False, methods=["get"])
     def export(self, request):

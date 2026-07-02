@@ -30,7 +30,7 @@ export default function LoginPage() {
   return (
     <div className="page-center">
       <form className="card login-card" onSubmit={handleSubmit}>
-        <h1>Otsuka EMS</h1>
+        <h1>Otsu EMS</h1>
         <p className="muted">Masuk untuk mengelola data karyawan &amp; absensi.</p>
         <label>
           Email
