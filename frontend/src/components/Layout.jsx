@@ -1,10 +1,12 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthContext'
 
 export default function Layout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const wide = location.pathname.startsWith('/dashboard')
 
   const handleLogout = () => {
     logout()
@@ -27,7 +29,7 @@ export default function Layout() {
           </button>
         </div>
       </header>
-      <main className="content">
+      <main className={wide ? 'content content-wide' : 'content'}>
         <Outlet />
       </main>
     </div>

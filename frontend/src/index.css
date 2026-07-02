@@ -171,12 +171,25 @@ label {
 }
 
 .login-card {
-  width: 360px;
+  width: 400px;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   gap: 16px;
   box-shadow: var(--shadow-md);
-  padding: 28px;
+  padding: 32px;
+}
+
+.login-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.login-sub {
+  font-size: 14px;
+  text-wrap: balance;
 }
 
 .app-shell {
@@ -251,6 +264,10 @@ label {
   max-width: 1120px;
   margin: 28px auto;
   padding: 0 28px;
+}
+
+.content-wide {
+  max-width: 1600px;
 }
 
 .stack {
@@ -617,6 +634,19 @@ label.inline input {
   }
 }
 
+.dash-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(360px, 2fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.dash-charts {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .chart-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -625,6 +655,12 @@ label.inline input {
 
 .chart-box {
   height: 280px;
+}
+
+@media (max-width: 1024px) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -638,8 +674,264 @@ label.inline input {
   }
 
   .stat-grid,
-  .chart-grid {
+  .chart-grid,
+  .dash-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* --- kAI analytics panel ------------------------------------------------- */
+.kai-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.kai-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.kai-head h3 {
+  margin: 0 0 2px;
+}
+
+.kai-head p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.kai-logo {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.kai-ask {
+  display: flex;
+  gap: 10px;
+}
+
+.kai-ask input {
+  flex: 1;
+}
+
+.kai-ask button {
+  flex: none;
+  white-space: nowrap;
+}
+
+.kai-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kai-chip {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.kai-chip:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.kai-result {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.kai-result:empty {
+  display: none;
+}
+
+.kai-result-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.kai-result-head h3 {
+  margin: 0;
+}
+
+.kai-hint,
+.kai-loading {
+  font-size: 14px;
+  margin: 0;
+}
+
+.kai-block {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 18px;
+}
+
+.kai-block h4 {
+  margin: 0 0 14px;
+  font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.kai-chart-box {
+  height: 300px;
+}
+
+.kai-table {
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.kai-chart-box + .kai-table {
+  margin-top: 16px;
+}
+
+.kai-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.kai-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+
+.kai-kpi-value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.kai-kpi-value.ok {
+  color: var(--ok);
+}
+.kai-kpi-value.late {
+  color: var(--late);
+}
+.kai-kpi-value.danger {
+  color: var(--danger);
+}
+.kai-kpi-value.accent {
+  color: var(--accent);
+}
+.kai-kpi-value.muted {
+  color: var(--text-h);
+}
+
+.kai-kpi-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.kai-narrative {
+  display: flex;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(21, 82, 179, 0.2);
+  border-radius: var(--r-md);
+}
+
+.kai-narrative-mark {
+  flex: none;
+  align-self: flex-start;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+  background: var(--accent);
+  padding: 3px 8px;
+  border-radius: var(--r-sm);
+}
+
+.kai-narrative h4 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.kai-narrative p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.kai-heatmap {
+  display: grid;
+  gap: 4px;
+  align-items: center;
+  margin-top: 8px;
+  overflow-x: auto;
+}
+
+.kai-heat-col,
+.kai-heat-row {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.kai-heat-col {
+  text-align: center;
+}
+
+.kai-heat-row {
+  text-align: right;
+  padding-right: 6px;
+  font-weight: 600;
+}
+
+.kai-heat-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  min-height: 30px;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .kai-ask {
+    flex-direction: column;
+  }
+  .kai-chart-box {
+    height: 260px;
   }
 }
 

@@ -48,7 +48,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--employees", type=int, default=300)
-        parser.add_argument("--days", type=int, default=30)
+        parser.add_argument("--days", type=int, default=180)  # ~6 months of history
         parser.add_argument(
             "--reset",
             action="store_true",

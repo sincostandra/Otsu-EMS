@@ -42,6 +42,8 @@ def test_summary_returns_aggregates(admin_client, employee_user):
     assert r.data["total_employees"] == 1
     assert len(r.data["attendance_recap"]) == 7
     assert r.data["attendance_recap"][0].keys() >= {"tanggal", "hadir", "telat"}
+    assert len(r.data["attendance_trend_30d"]) == 30
+    assert r.data["attendance_trend_30d"][-7:] == r.data["attendance_recap"]
 
 
 def test_summary_includes_late_today(admin_client, employee_user):
