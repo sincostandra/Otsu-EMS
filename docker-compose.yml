@@ -1,5 +1,5 @@
 # Local production-like stack: Django (gunicorn + WhiteNoise) + Postgres.
-# Mirrors the Render deploy so you can verify the container before pushing.
+# Mirrors the Railway deploy so you can verify the container before pushing.
 #   docker compose up --build   ->  http://localhost:8000
 services:
   db:
