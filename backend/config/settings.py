@@ -58,6 +58,13 @@ if PLATFORM_HOSTNAME:
     ALLOWED_HOSTS.append(PLATFORM_HOSTNAME)
     CSRF_TRUSTED_ORIGINS.append(f"https://{PLATFORM_HOSTNAME}")
 
+# On Railway all traffic — including the deploy healthcheck (Host:
+# healthcheck.railway.app) and the public *.up.railway.app URL — arrives over
+# railway.app. Trust that wildcard so ALLOWED_HOSTS doesn't 400 the healthcheck,
+# even before a public domain is generated on the first deploy.
+if os.environ.get("RAILWAY_ENVIRONMENT"):
+    ALLOWED_HOSTS.append(".railway.app")
+
 
 # Application definition
 
