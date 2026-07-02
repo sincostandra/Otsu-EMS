@@ -171,12 +171,25 @@ label {
 }
 
 .login-card {
-  width: 360px;
+  width: 400px;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   gap: 16px;
   box-shadow: var(--shadow-md);
-  padding: 28px;
+  padding: 32px;
+}
+
+.login-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.login-sub {
+  font-size: 14px;
+  text-wrap: balance;
 }
 
 .app-shell {
@@ -251,6 +264,10 @@ label {
   max-width: 1120px;
   margin: 28px auto;
   padding: 0 28px;
+}
+
+.content-wide {
+  max-width: 1600px;
 }
 
 .stack {
@@ -617,6 +634,19 @@ label.inline input {
   }
 }
 
+.dash-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(360px, 2fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.dash-charts {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .chart-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -625,6 +655,12 @@ label.inline input {
 
 .chart-box {
   height: 280px;
+}
+
+@media (max-width: 1024px) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -638,7 +674,8 @@ label.inline input {
   }
 
   .stat-grid,
-  .chart-grid {
+  .chart-grid,
+  .dash-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -648,7 +685,6 @@ label.inline input {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  border-top: 3px solid var(--accent);
 }
 
 .kai-head {
@@ -852,6 +888,42 @@ label.inline input {
   margin: 0;
   font-size: 14px;
   color: var(--text);
+}
+
+.kai-heatmap {
+  display: grid;
+  gap: 4px;
+  align-items: center;
+  margin-top: 8px;
+  overflow-x: auto;
+}
+
+.kai-heat-col,
+.kai-heat-row {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.kai-heat-col {
+  text-align: center;
+}
+
+.kai-heat-row {
+  text-align: right;
+  padding-right: 6px;
+  font-weight: 600;
+}
+
+.kai-heat-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  min-height: 30px;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 @media (max-width: 720px) {

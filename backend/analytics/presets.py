@@ -40,6 +40,17 @@ PRESETS = [
         },
     },
     {
+        "id": "late-heatmap",
+        "question": "Bagaimana pola keterlambatan per hari dalam seminggu?",
+        "keywords": ["pola", "heatmap"],
+        "plan": {
+            "title": "Pola keterlambatan mingguan (60 hari terakhir)",
+            "insight_kind": "template",
+            "blocks": [{"metric": "lateness_heatmap",
+                        "params": {"period_days": 60}, "viz": "heatmap"}],
+        },
+    },
+    {
         "id": "month-insight",
         "question": "Apakah ada insight menarik dari data absensi bulan ini?",
         "keywords": ["insight", "menarik", "ringkasan"],

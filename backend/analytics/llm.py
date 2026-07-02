@@ -43,6 +43,7 @@ Petunjuk memilih:
 - "siapa"/"paling sering telat"/"ranking" -> top_late_employees.
 - "divisi/jabatan mana ... lembur" -> overtime_by_jabatan;
   "... telat" -> lateness_by_jabatan; "... kehadiran" -> attendance_rate_by_jabatan.
+- "pola"/"heatmap"/"peta"/"hari apa paling sering telat" -> lateness_heatmap.
 - Tangkap periode dari kalimat: "1 bulan"->period_months 1, "6 bulan"->period_months 6,
   "minggu ini"->period_days 7. Default 30 hari bila tak disebut.
 - Pertanyaan terbuka ("insight menarik", "ringkasan") -> insight_kind "llm" DAN
@@ -70,13 +71,19 @@ Balas HANYA JSON dengan bentuk:
 
 
 def _chat(messages, *, max_tokens=500, temperature=0.0):
-    payload = json.dumps({
+    body = {
         "model": settings.GROQ_MODEL,
         "messages": messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
         "response_format": {"type": "json_object"},
-    }).encode()
+    }
+    # gpt-oss is a reasoning model: reasoning tokens count toward the output
+    # budget, and Groq validates JSON server-side. Keep reasoning light so the
+    # model has room to emit valid JSON (and to keep cost/latency down).
+    if "gpt-oss" in settings.GROQ_MODEL:
+        body["reasoning_effort"] = "low"
+    payload = json.dumps(body).encode()
     req = urllib.request.Request(
         settings.GROQ_BASE_URL,
         data=payload,
@@ -89,9 +96,15 @@ def _chat(messages, *, max_tokens=500, temperature=0.0):
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=settings.GROQ_TIMEOUT) as resp:
-        body = json.loads(resp.read().decode())
-    return body["choices"][0]["message"]["content"]
+    try:
+        with urllib.request.urlopen(req, timeout=settings.GROQ_TIMEOUT) as resp:
+            data = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        # Surface Groq's error body (e.g. json_validate_failed) for debugging.
+        detail = exc.read().decode(errors="replace")[:500]
+        logger.warning("Groq HTTP %s: %s", exc.code, detail)
+        raise
+    return data["choices"][0]["message"]["content"]
 
 
 def plan(question):
@@ -124,7 +137,7 @@ def narrate(context):
                 "bahasa Indonesia yang actionable. Balas JSON {\"insight\": str}."
             )},
             {"role": "user", "content": json.dumps(context, ensure_ascii=False)},
-        ], max_tokens=300, temperature=0.3)
+        ], max_tokens=800, temperature=0.3)
         data = json.loads(content)
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError,
             KeyError, ValueError) as exc:

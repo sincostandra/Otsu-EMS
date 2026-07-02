@@ -219,7 +219,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'DEFAULT_THROTTLE_RATES': {'login': '5/min', 'analytics': '20/hour'},
+    'DEFAULT_THROTTLE_RATES': {'login': '5/min', 'analytics': '60/hour'},
     # free up ?format= for the export endpoints (we don't use suffix negotiation)
     'URL_FORMAT_OVERRIDE': None,
 }

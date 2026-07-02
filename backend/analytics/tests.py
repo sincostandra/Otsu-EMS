@@ -71,6 +71,17 @@ def test_punctuality_boundary_at_0915(make_employee):
     assert counts[4] == 1  # 09:15-09:30
 
 
+def test_heatmap_buckets_by_weekday_and_week(make_employee):
+    emp = make_employee("kirana@x.test", "Kirana")
+    _att(emp, 1, time(9, 30))  # late
+    _att(emp, 8, time(9, 30))  # late, a week earlier (same weekday)
+    _att(emp, 2, time(8, 50))  # on time -> ignored
+    data = _run(metrics.lateness_heatmap, viz="heatmap")["data"]
+    assert data["max"] >= 1
+    assert sum(sum(row) for row in data["cells"]) == 2  # only the two late days
+    assert len(data["rows"]) == 5  # Mon–Fri
+
+
 # --- plan validation ------------------------------------------------------
 
 def test_block_validation_clamps_params_and_viz():

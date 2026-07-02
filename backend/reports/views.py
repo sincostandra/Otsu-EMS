@@ -35,7 +35,6 @@ class SummaryView(APIView):
 
     def get(self, request):
         today = timezone.localdate()
-        start = today - timedelta(days=6)
         cutoff = late_cutoff()
 
         per_jabatan = list(
@@ -44,19 +43,22 @@ class SummaryView(APIView):
             .order_by("-total")
         )
 
-        # last 7 days: present + late counts per day, gaps filled for the chart
-        hadir_by_day = self._counts_by_day(Attendance.objects.filter(tanggal__gte=start))
+        # 30 days of present/late counts per day (one pair of queries), gaps
+        # filled for the charts; the 7-day recap is just the tail of this.
+        start30 = today - timedelta(days=29)
+        hadir_by_day = self._counts_by_day(Attendance.objects.filter(tanggal__gte=start30))
         telat_by_day = self._counts_by_day(
-            Attendance.objects.filter(tanggal__gte=start, jam_masuk__gt=cutoff)
+            Attendance.objects.filter(tanggal__gte=start30, jam_masuk__gt=cutoff)
         )
-        recap = [
+        trend_30d = [
             {
-                "tanggal": (start + timedelta(days=i)).isoformat(),
-                "hadir": hadir_by_day.get(start + timedelta(days=i), 0),
-                "telat": telat_by_day.get(start + timedelta(days=i), 0),
+                "tanggal": (start30 + timedelta(days=i)).isoformat(),
+                "hadir": hadir_by_day.get(start30 + timedelta(days=i), 0),
+                "telat": telat_by_day.get(start30 + timedelta(days=i), 0),
             }
-            for i in range(7)
+            for i in range(30)
         ]
+        recap = trend_30d[-7:]
 
         late_today = [
             {
@@ -77,6 +79,7 @@ class SummaryView(APIView):
                 "late_today": late_today,
                 "per_jabatan": per_jabatan,
                 "attendance_recap": recap,
+                "attendance_trend_30d": trend_30d,
             }
         )
 

@@ -19,6 +19,7 @@ C_DANGER = "#b91c1c"
 
 MONTHS_ID = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
              "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
+DOW_ID = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
 
 
 def _range_qs(start, end):
@@ -255,6 +256,40 @@ def punctuality_distribution(*, start, end, period_label, viz=None, **kw):
     }
 
 
+def lateness_heatmap(*, start, end, period_label, viz=None, **kw):
+    # rows = weekday (Mon–Fri), columns = Mon-anchored weeks; cell = late count.
+    first_monday = start - timedelta(days=start.weekday())
+    weeks = []
+    d = first_monday
+    while d <= end:
+        weeks.append(d)
+        d += timedelta(days=7)
+    week_index = {w: i for i, w in enumerate(weeks)}
+    n_days = 5
+    cells = [[0] * len(weeks) for _ in range(n_days)]
+    dates = (_range_qs(start, end).filter(jam_masuk__gt=late_cutoff())
+             .values_list("tanggal", flat=True))
+    mx = 0
+    for dt in dates:
+        wd = dt.weekday()
+        col = week_index.get(dt - timedelta(days=wd))
+        if wd >= n_days or col is None:
+            continue
+        cells[wd][col] += 1
+        mx = max(mx, cells[wd][col])
+    return {
+        "type": viz or "heatmap",
+        "title": f"Pola keterlambatan mingguan · {period_label}",
+        "data": {
+            "rows": DOW_ID[:n_days],
+            "columns": [_fmt_day(w) for w in weeks],
+            "cells": cells,
+            "max": mx,
+        },
+        "empty": mx == 0,
+    }
+
+
 REGISTRY = {
     "attendance_overview": {
         "func": attendance_overview, "params": ["period_days"],
@@ -295,5 +330,10 @@ REGISTRY = {
         "func": punctuality_distribution, "params": ["period_days"],
         "allowed_viz": ["bar"], "default_viz": "bar",
         "description": "Histogram sebaran jam masuk (tepat waktu vs telat).",
+    },
+    "lateness_heatmap": {
+        "func": lateness_heatmap, "params": ["period_days"],
+        "allowed_viz": ["heatmap"], "default_viz": "heatmap",
+        "description": "Peta panas keterlambatan per hari dalam seminggu × pekan.",
     },
 }

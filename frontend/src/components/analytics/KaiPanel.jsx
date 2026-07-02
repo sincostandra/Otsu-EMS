@@ -57,7 +57,7 @@ export default function KaiPanel() {
         <div>
           <h3>Tanya kAI</h3>
           <p className="muted">
-            Analitik absensi berbasis AI — tanya dalam bahasa sehari-hari.
+            Analitik absensi berbasis AI. Tanya dalam bahasa sehari-hari.
           </p>
         </div>
       </header>

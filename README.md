@@ -13,6 +13,9 @@ and track their own monthly stats. Lateness is derived from check-in time
 - **Reports** — admin dashboard (today's late list, per-jabatan mix, 7-day recap chart);
   employee self-stats (monthly hadir / telat / tidak hadir / attendance rate).
 - **Export** — employees and attendance to CSV / Excel (admin only).
+- **kAI — AI Analytics** — admins ask attendance questions in natural language
+  (Indonesian) and get interactive charts, KPI cards, a lateness heatmap, and a
+  short written insight. The LLM only *plans*; the backend computes the numbers.
 
 ## Tech stack
 
@@ -31,6 +34,41 @@ One container serves everything on a single origin: Django exposes the API under
 `/api/`, WhiteNoise serves the built React bundle under `/static/`, and a catch-all
 route returns `index.html` so client-side routing works on deep links. The frontend
 calls the API with a relative `baseURL` (`/api`), so no CORS is needed in production.
+
+## AI Analytics (kAI)
+
+kAI lives on the admin dashboard: type a question (or tap a preset chip) and get a
+visual answer. It's designed to be **safe, cheap, and extensible**.
+
+**LLM plans, the backend computes.** The model never touches the database or writes
+queries. It only maps a question onto an allow-listed catalog of metrics plus typed
+params and a suggested chart:
+
+```
+question ─▶ planner (LLM) ─▶ { metric, params, viz } ─▶ validate/clamp ─▶ ORM ─▶ chart blocks
+```
+
+Every plan is validated server-side (`analytics/serializers.py`): unknown metrics are
+rejected, `viz` must be in the metric's allow-list, and params are clamped
+(`period_days ≤ 400`, `limit ≤ 50`, `granularity ∈ {day, week, month}`). Raw employee
+data is never sent to the model in the planning step.
+
+**Cost controls** (it runs on a free budget):
+
+- **Preset chips** map straight to fixed plans — 0 LLM calls for the common questions.
+- A **verbatim-preset** match and a per-question **cache** (5-min TTL) also short-circuit the model.
+- Free-text questions use **one** planner call; a second small **narrator** call happens
+  only for open-ended "insight" questions and receives compact aggregates, never raw records.
+- If no key is set, kAI still works via preset + keyword matching.
+
+**Extending it** = add a function to `analytics/metrics.py` (with a catalog descriptor)
+and, for a new chart, a renderer branch in `frontend/src/components/analytics/`. The
+catalog prompt and validation pick it up automatically.
+
+Set `GROQ_API_KEY` (see Environment variables) to enable the planner. Metrics today:
+attendance overview, top-late ranking, lateness trend, attendance-composition trend,
+lateness / overtime / attendance-rate by division, punctuality distribution, and a
+weekly **lateness heatmap**.
 
 ## Quick start (Docker)
 
@@ -77,7 +115,7 @@ with the `SEED_*` env vars).
 | Employee | citra@otsu.test   | `employee12345` |
 | Employee | eko@otsu.test     | `employee12345` |
 
-The seed creates ~300 employees with ~30 days of varied attendance; only the accounts
+The seed creates ~300 employees with ~6 months of varied attendance; only the accounts
 above have usable passwords — everyone else gets a random one. Re-run with `--reset`
 to rebuild from scratch.
 
@@ -95,6 +133,8 @@ to rebuild from scratch.
 | `SEED_ADMIN_PASSWORD`    | `admin12345`                | Seed admin password |
 | `SEED_EMPLOYEE_PASSWORD` | `employee12345`             | Demo employees' password |
 | `WEB_CONCURRENCY`        | `2`                         | Gunicorn workers |
+| `GROQ_API_KEY`           | empty                       | Enables the kAI planner; keep it in env only, never in the repo |
+| `GROQ_MODEL`             | `openai/gpt-oss-20b`        | Groq model for planning/narration |
 
 On Railway, `DATABASE_URL`, `PORT`, and the public hostname
 (`RAILWAY_PUBLIC_DOMAIN`) are injected automatically; set the rest in the
@@ -119,12 +159,14 @@ All endpoints are under `/api/` and require a `Bearer` token except login.
 | GET    | `/api/attendance/export/?format=csv\|xlsx` | Export *(admin)* |
 | GET    | `/api/reports/summary/`         | Admin dashboard data |
 | GET    | `/api/reports/my-stats/`        | Employee's own monthly stats |
+| POST   | `/api/analytics/query/`         | Ask kAI a question or run a preset *(admin)* |
+| GET    | `/api/analytics/presets/`       | List preset questions *(admin)* |
 
 ## Testing
 
 ```bash
 cd backend
-pytest              # 35 tests
+pytest              # 58 tests
 ruff check .        # lint
 
 cd ../frontend
@@ -149,6 +191,7 @@ The repo ships a `railway.json` so Railway builds straight from the `Dockerfile`
    - `DJANGO_DEBUG=0`
    - `RUN_SEED=1` for the first deploy, then set it to `0` so later deploys skip re-seeding
    - `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_EMPLOYEE_PASSWORD` — demo logins
+   - `GROQ_API_KEY` — enables kAI's LLM planner (optional; kAI degrades to presets without it)
    `PORT` and `RAILWAY_PUBLIC_DOMAIN` (used for `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS`)
    are provided by Railway; no need to set them.
 5. **Expose the service** — under **Settings → Networking → Generate Domain** to get
@@ -160,7 +203,7 @@ The entrypoint migrates (and optionally seeds) before Gunicorn binds to `$PORT`.
 
 ```
 Otsu-EMS/
-├── backend/            # Django project (config) + apps: accounts, employees, attendance, reports
+├── backend/            # Django project (config) + apps: accounts, employees, attendance, reports, analytics
 │   ├── config/         # settings, urls, SPA-serving view, wsgi
 │   └── entrypoint.sh   # migrate → optional seed → gunicorn
 ├── frontend/           # React (Vite) SPA
